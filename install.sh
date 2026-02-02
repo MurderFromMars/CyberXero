@@ -36,24 +36,6 @@ backup_file() {
     fi
 }
 
-stop_plasmashell() {
-    if pgrep -x "plasmashell" > /dev/null; then
-        log "stopping plasmashell to prevent config conflicts..."
-        kquitapp6 plasmashell 2>/dev/null || killall plasmashell 2>/dev/null || true
-        sleep 2
-        ok "plasmashell stopped"
-    fi
-}
-
-start_plasmashell() {
-    if ! pgrep -x "plasmashell" > /dev/null; then
-        log "restarting plasmashell..."
-        nohup plasmashell >/dev/null 2>&1 &
-        sleep 3
-        ok "plasmashell restarted"
-    fi
-}
-
 purge_old_panels_live() {
     log "purging existing panels from live session..."
     
@@ -580,11 +562,8 @@ main() {
     section "PHASE 3: THEME DEPLOYMENT"
     
     subsection "Panel Cleanup"
-    # Remove old panels from LIVE session first
+    # Remove old panels from LIVE session
     purge_old_panels_live
-    
-    # THEN stop plasmashell (so it doesn't save the old config)
-    stop_plasmashell
     
     subsection "Visual Assets"
     deploy_yamis_icons
@@ -600,10 +579,7 @@ main() {
     subsection "Theme Activation"
     apply_kde_theme_settings
     
-    # Restart plasmashell with new config
-    start_plasmashell
-    
-    # Set wallpaper AFTER plasmashell is running
+    # Set wallpaper
     set_active_wallpaper
 
     printf "\n\033[1;35m╔═══════════════════════════════════════════════════════╗\033[0m\n"
