@@ -448,6 +448,54 @@ deploy_wallpapers() {
     fi
 }
 
+inject_wallpaper_to_config() {
+    log "injecting wallpaper path into plasma config…"
+    local config="$HOME/.config/plasma-org.kde.plasma.desktop-appletsrc"
+    local wallpaper="/usr/local/share/icons/cyberfield.jpg"
+    
+    if [ ! -f "$config" ]; then
+        warn "plasma config not found: $config"
+        return 1
+    fi
+    
+    if [ ! -f "$wallpaper" ]; then
+        warn "wallpaper file not found: $wallpaper"
+        return 1
+    fi
+    
+    # Find the desktop containment ID (the one with plugin=org.kde.plasma.folder)
+    local containment_id
+    containment_id=$(grep -A 10 "plugin=org.kde.plasma.folder" "$config" | grep -B 10 "formfactor=0" | grep "^\[Containments\[" | head -n 1 | sed 's/\[Containments\[\([0-9]*\)\].*/\1/')
+    
+    if [ -z "$containment_id" ]; then
+        warn "could not find desktop containment ID in config"
+        return 1
+    fi
+    
+    log "found desktop containment ID: $containment_id"
+    
+    # Check if wallpaper section already exists
+    if grep -q "^\[Containments\[$containment_id\]\[Wallpaper\]\[org.kde.image\]\[General\]" "$config"; then
+        # Section exists, update the Image line
+        if grep -q "^Image=" "$config"; then
+            sed -i "/^\[Containments\[$containment_id\]\[Wallpaper\]\[org.kde.image\]\[General\]/,/^\[/ s|^Image=.*|Image=$wallpaper|" "$config"
+            ok "wallpaper path updated in existing section"
+        else
+            # Section exists but no Image line, add it
+            sed -i "/^\[Containments\[$containment_id\]\[Wallpaper\]\[org.kde.image\]\[General\]/a Image=$wallpaper" "$config"
+            ok "wallpaper path added to existing section"
+        fi
+    else
+        # Section doesn't exist, create it
+        echo "" >> "$config"
+        echo "[Containments][$containment_id][Wallpaper][org.kde.image][General]" >> "$config"
+        echo "Image=$wallpaper" >> "$config"
+        ok "wallpaper section created with path"
+    fi
+    
+    return 0
+}
+
 set_active_wallpaper() {
     log "setting active wallpaper → cyberfield.jpg…"
     local wallpaper="/usr/local/share/icons/cyberfield.jpg"
@@ -579,7 +627,10 @@ main() {
     subsection "Theme Activation"
     apply_kde_theme_settings
     
-    # Set wallpaper
+    # Inject wallpaper path into config file (persists across reboots)
+    inject_wallpaper_to_config
+    
+    # Set wallpaper for current session
     set_active_wallpaper
 
     printf "\n\033[1;35m╔═══════════════════════════════════════════════════════╗\033[0m\n"
