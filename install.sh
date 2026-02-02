@@ -471,6 +471,58 @@ set_active_wallpaper() {
     fi
 }
 
+create_wallpaper_autostart() {
+    log "creating post-login wallpaper script…"
+    local autostart_dir="$HOME/.config/autostart"
+    local script_dir="$HOME/.local/bin"
+    local wallpaper="/usr/local/share/icons/cyberfield.jpg"
+    
+    mkdir -p "$autostart_dir"
+    mkdir -p "$script_dir"
+    
+    # Create the script that will run on login
+    cat > "$script_dir/cyberxero-set-wallpaper.sh" << 'WALLPAPER_SCRIPT'
+#!/bin/bash
+# CyberXero wallpaper setter - runs once on first login
+
+WALLPAPER="/usr/local/share/icons/cyberfield.jpg"
+MARKER="$HOME/.config/cyberxero-wallpaper-set"
+
+# Check if already run
+if [ -f "$MARKER" ]; then
+    exit 0
+fi
+
+# Wait for plasma to fully start
+sleep 3
+
+# Set wallpaper
+if command -v plasma-apply-wallpaperimage >/dev/null 2>&1; then
+    plasma-apply-wallpaperimage "$WALLPAPER"
+fi
+
+# Create marker file so this doesn't run again
+touch "$MARKER"
+
+# Remove this autostart entry
+rm -f "$HOME/.config/autostart/cyberxero-wallpaper.desktop"
+WALLPAPER_SCRIPT
+
+    chmod +x "$script_dir/cyberxero-set-wallpaper.sh"
+    
+    # Create autostart desktop entry
+    cat > "$autostart_dir/cyberxero-wallpaper.desktop" << DESKTOP_ENTRY
+[Desktop Entry]
+Type=Application
+Name=CyberXero Wallpaper
+Exec=$script_dir/cyberxero-set-wallpaper.sh
+X-KDE-autostart-after=panel
+X-KDE-autostart-phase=2
+DESKTOP_ENTRY
+
+    ok "autostart wallpaper script created"
+}
+
 apply_breeze_decoration() {
     log "configuring Breeze window decoration…"
     if command -v kwriteconfig6 >/dev/null 2>&1; then
@@ -565,8 +617,8 @@ main() {
     subsection "Theme Activation"
     apply_kde_theme_settings
     
-    subsection "Wallpaper"
-    set_active_wallpaper
+    subsection "Wallpaper Setup"
+    create_wallpaper_autostart
 
     printf "\n\033[1;35m╔═══════════════════════════════════════════════════════╗\033[0m\n"
     printf "\033[1;35m║\033[0m  \033[1;32mCYBERXERO DEPLOYMENT COMPLETE\033[0m                    \033[1;35m║\033[0m\n"
