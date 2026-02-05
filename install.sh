@@ -2,9 +2,7 @@
 [ -z "$BASH_VERSION" ] && exec bash "$0" "$@"
 set -euo pipefail
 
-########################################
-# CYBERXERO :: NEON SYSTEM INITIALIZER
-########################################
+
 
 REPO_DIR="$HOME/CyberXero"
 BACKUP_DIR="$HOME/CyberXero-backup-$(date +%Y%m%d_%H%M%S)"
@@ -44,7 +42,7 @@ purge_old_panels_live() {
         return
     fi
     
-    # Remove all panels directly using panels() API
+    
     qdbus6 org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript "
         const allPanels = panels();
         for (let i = allPanels.length - 1; i >= 0; i--) {
@@ -479,8 +477,8 @@ create_wallpaper_autostart() {
     
     mkdir -p "$autostart_dir"
     mkdir -p "$script_dir"
+
     
-    # Create the script that will run on login
     cat > "$script_dir/cyberxero-set-wallpaper.sh" << 'WALLPAPER_SCRIPT'
 #!/bin/bash
 # CyberXero wallpaper setter - runs once on first login
@@ -510,7 +508,7 @@ WALLPAPER_SCRIPT
 
     chmod +x "$script_dir/cyberxero-set-wallpaper.sh"
     
-    # Create autostart desktop entry
+    
     cat > "$autostart_dir/cyberxero-wallpaper.desktop" << DESKTOP_ENTRY
 [Desktop Entry]
 Type=Application
@@ -544,7 +542,7 @@ apply_breeze_decoration() {
 apply_kde_theme_settings() {
     log "activating neon theme parameters…"
     
-    # Set color scheme using plasma-apply-colorscheme
+    
     if command -v plasma-apply-colorscheme >/dev/null 2>&1; then
         plasma-apply-colorscheme CyberXero 2>/dev/null || true
         ok "color scheme activated → CyberXero"
@@ -552,7 +550,7 @@ apply_kde_theme_settings() {
         warn "plasma-apply-colorscheme not found"
     fi
     
-    # Set icon theme and enable KWin scripts
+    
     if command -v kwriteconfig6 >/dev/null 2>&1; then
         kwriteconfig6 --file kdeglobals --group Icons --key Theme "YAMIS"
         ok "icon theme activated → YAMIS"
@@ -566,10 +564,10 @@ apply_kde_theme_settings() {
         warn "kwriteconfig6 not found"
     fi
     
-    # Set Breeze window decoration
+    
     apply_breeze_decoration
     
-    # Reconfigure KWin to apply script changes
+    
     if command -v qdbus6 >/dev/null 2>&1; then
         qdbus6 org.kde.KWin /KWin reconfigure 2>/dev/null || true
         ok "KWin reconfigured"
@@ -600,7 +598,7 @@ main() {
     section "PHASE 3: THEME DEPLOYMENT"
     
     subsection "Panel Cleanup"
-    # Remove old panels from LIVE session
+
     purge_old_panels_live
     
     subsection "Visual Assets"
