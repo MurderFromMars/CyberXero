@@ -189,9 +189,26 @@ build_kde_rounded_corners() {
     ok "rounded corners installed"
 }
 
+build_better_blur() {
+    log "compiling kwin‑effects‑better‑blur‑dx…"
+    local tmp
+    tmp="$(mktemp -d)"
+    git clone "https://github.com/xarblu/kwin-effects-better-blur-dx" "$tmp/kwin-effects-better-blur-dx" 2>&1 | grep -v -E "^(remote:|Receiving|Resolving|Counting)" | grep -v "^$" || true
+    cd "$tmp/kwin-effects-better-blur-dx"
+    mkdir build && cd build
+    cmake .. -DCMAKE_INSTALL_PREFIX=/usr >/dev/null 2>&1
+    make -j"$(nproc)" 2>&1 | grep -E "Built target|^\[" || true
+    sudo make install >/dev/null 2>&1
+    cd ~
+    rm -rf "$tmp"
+    ok "better blur dx installed"
+}
+
 setup_autorebuild_system() {
-    log "configuring auto-rebuild for KDE Rounded Corners…"
+    log "configuring auto-rebuild for KDE Rounded Corners & Better Blur DX…"
     sudo mkdir -p /usr/local/bin
+
+    # --- KDE Rounded Corners rebuild script ---
     sudo tee /usr/local/bin/rebuild-kde-rounded-corners.sh > /dev/null <<'REBUILD_SCRIPT'
 #!/usr/bin/env bash
 set -euo pipefail
@@ -260,14 +277,96 @@ exit 0
 REBUILD_SCRIPT
 
     sudo chmod +x /usr/local/bin/rebuild-kde-rounded-corners.sh
+
+    # --- Better Blur DX rebuild script ---
+    sudo tee /usr/local/bin/rebuild-better-blur-dx.sh > /dev/null <<'REBUILD_BLUR'
+#!/usr/bin/env bash
+set -euo pipefail
+LOG_FILE="/var/log/better-blur-dx-rebuild.log"
+
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
+}
+
+log "=== Better Blur DX Rebuild Started ==="
+
+TMP_DIR="$(mktemp -d)"
+cd "$TMP_DIR"
+
+log "Cloning repository..."
+if git clone "https://github.com/xarblu/kwin-effects-better-blur-dx" better-blur-dx; then
+    log "Repository cloned successfully"
+else
+    log "ERROR: Failed to clone repository"
+    rm -rf "$TMP_DIR"
+    exit 1
+fi
+
+cd better-blur-dx
+
+log "Building Better Blur DX..."
+if mkdir build && cd build; then
+    if cmake .. -DCMAKE_INSTALL_PREFIX=/usr && make -j"$(nproc)"; then
+        log "Build successful"
+
+        log "Installing..."
+        if make install; then
+            log "Installation successful"
+        else
+            log "ERROR: Installation failed"
+            cd ~
+            rm -rf "$TMP_DIR"
+            exit 1
+        fi
+    else
+        log "ERROR: Build failed"
+        cd ~
+        rm -rf "$TMP_DIR"
+        exit 1
+    fi
+else
+    log "ERROR: Failed to create build directory"
+    cd ~
+    rm -rf "$TMP_DIR"
+    exit 1
+fi
+
+cd ~
+rm -rf "$TMP_DIR"
+
+log "=== Better Blur DX Rebuild Completed Successfully ==="
+
+if command -v qdbus6 >/dev/null 2>&1; then
+    qdbus6 org.kde.KWin /KWin reconfigure 2>/dev/null || true
+    log "KWin reconfigured"
+fi
+
+exit 0
+REBUILD_BLUR
+
+    sudo chmod +x /usr/local/bin/rebuild-better-blur-dx.sh
+
+    # --- Log files ---
     sudo touch /var/log/kde-rounded-corners-rebuild.log
     sudo chmod 666 /var/log/kde-rounded-corners-rebuild.log
+    sudo touch /var/log/better-blur-dx-rebuild.log
+    sudo chmod 666 /var/log/better-blur-dx-rebuild.log
+
+    # --- Combined rebuild wrapper (called by hooks) ---
+    sudo tee /usr/local/bin/rebuild-kwin-effects.sh > /dev/null <<'WRAPPER'
+#!/usr/bin/env bash
+# Rebuild all KWin effects that need recompilation after kwin updates
+/usr/local/bin/rebuild-kde-rounded-corners.sh
+/usr/local/bin/rebuild-better-blur-dx.sh
+WRAPPER
+
+    sudo chmod +x /usr/local/bin/rebuild-kwin-effects.sh
 
     case "$DISTRO" in
         arch)
             log "installing pacman hook…"
             sudo mkdir -p /etc/pacman.d/hooks
-            sudo tee /etc/pacman.d/hooks/kde-rounded-corners-rebuild.hook > /dev/null <<'HOOK'
+            sudo tee /etc/pacman.d/hooks/kwin-effects-rebuild.hook > /dev/null <<'HOOK'
 [Trigger]
 Operation = Install
 Operation = Upgrade
@@ -275,9 +374,9 @@ Type = Package
 Target = kwin
 
 [Action]
-Description = Rebuilding KDE Rounded Corners after KWin update...
+Description = Rebuilding KWin effects (Rounded Corners + Better Blur DX) after KWin update...
 When = PostTransaction
-Exec = /usr/local/bin/rebuild-kde-rounded-corners.sh
+Exec = /usr/local/bin/rebuild-kwin-effects.sh
 Depends = kwin
 HOOK
             ok "pacman hook installed → auto-rebuild enabled"
@@ -285,17 +384,17 @@ HOOK
         debian)
             log "creating apt hook…"
             
-            sudo tee /usr/local/bin/check-and-rebuild-kde-rounded-corners.sh > /dev/null <<'CHECKSCRIPT'
+            sudo tee /usr/local/bin/check-and-rebuild-kwin-effects.sh > /dev/null <<'CHECKSCRIPT'
 #!/usr/bin/env bash
 # Only rebuild if kwin packages were updated in the current dpkg run
 if tail -20 /var/log/dpkg.log 2>/dev/null | grep -qE " (upgrade|configure) kwin"; then
-    /usr/local/bin/rebuild-kde-rounded-corners.sh
+    /usr/local/bin/rebuild-kwin-effects.sh
 fi
 CHECKSCRIPT
-            sudo chmod +x /usr/local/bin/check-and-rebuild-kde-rounded-corners.sh
+            sudo chmod +x /usr/local/bin/check-and-rebuild-kwin-effects.sh
 
-            sudo tee /etc/apt/apt.conf.d/99-kde-rounded-corners-rebuild > /dev/null <<'APTHOOK'
-DPkg::Post-Invoke { "/usr/local/bin/check-and-rebuild-kde-rounded-corners.sh"; };
+            sudo tee /etc/apt/apt.conf.d/99-kwin-effects-rebuild > /dev/null <<'APTHOOK'
+DPkg::Post-Invoke { "/usr/local/bin/check-and-rebuild-kwin-effects.sh"; };
 APTHOOK
             ok "apt hook installed → auto-rebuild on kwin updates"
             ;;
@@ -502,8 +601,9 @@ fi
 # Create marker file so this doesn't run again
 touch "$MARKER"
 
-# Remove this autostart entry
+# Remove this autostart entry and self-delete
 rm -f "$HOME/.config/autostart/cyberxero-wallpaper.desktop"
+rm -f "$HOME/.local/bin/cyberxero-set-wallpaper.sh"
 WALLPAPER_SCRIPT
 
     chmod +x "$script_dir/cyberxero-set-wallpaper.sh"
@@ -589,6 +689,7 @@ main() {
     build_panel_colorizer
     build_kurve
     build_kde_rounded_corners
+    build_better_blur
     setup_autorebuild_system
     
     subsection "KWin Scripts"
@@ -622,7 +723,8 @@ main() {
     printf "\033[1;35m║\033[0m  \033[1;32mCYBERXERO DEPLOYMENT COMPLETE\033[0m                    \033[1;35m║\033[0m\n"
     printf "\033[1;35m╚═══════════════════════════════════════════════════════╝\033[0m\n\n"
     printf "\033[1;36m📦 Backup archive:\033[0m %s\n" "$BACKUP_DIR"
-    printf "\033[1;36m📋 Auto-rebuild logs:\033[0m /var/log/kde-rounded-corners-rebuild.log\n\n"
+    printf "\033[1;36m📋 Auto-rebuild logs:\033[0m /var/log/kde-rounded-corners-rebuild.log\n"
+    printf "\033[1;36m📋 Auto-rebuild logs:\033[0m /var/log/better-blur-dx-rebuild.log\n\n"
     printf "\033[1;31m╔═══════════════════════════════════════════════════════╗\033[0m\n"
     printf "\033[1;31m║  ⚠️  ACTION REQUIRED: LOG OUT OR REBOOT NOW           ║\033[0m\n"
     printf "\033[1;31m║     to fully apply all theme changes!                 ║\033[0m\n"
