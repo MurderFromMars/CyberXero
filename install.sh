@@ -484,6 +484,22 @@ deploy_config_folders() {
     done
 }
 
+deploy_gtk4_config() {
+    log "deploying gtk-4.0 configuration…"
+    local src="$REPO_DIR/gtk-4.0"
+    local dest="$HOME/.config/gtk-4.0"
+
+    if [ ! -d "$src" ]; then
+        warn "missing → gtk-4.0 (not found in repo)"
+        return
+    fi
+
+    backup_file "$dest"
+    rm -rf "$dest"
+    cp -r "$src" "$dest"
+    ok "config → gtk-4.0"
+}
+
 deploy_rc_files() {
     log "deploying plasma rc files…"
     local rc_files=(
@@ -713,6 +729,7 @@ main() {
 
     subsection "Configuration Files"
     deploy_config_folders
+    deploy_gtk4_config
     deploy_rc_files
     deploy_kwinrules
     patch_appletsrc_activity_id
