@@ -83,6 +83,67 @@ window > *,
 }
 
 /* ---------------------------------------------------------
+ * COMPOSITING / LAYOUT CONTAINERS — MUST BE TRANSPARENT
+ *
+ * These widgets are pure layout or compositing layers.
+ * The * rule above gives them background-color: @cx-bg,
+ * which causes them to paint a solid opaque rectangle over
+ * everything rendered beneath them in the widget tree.
+ *
+ * GtkOverlay: stacks children on top of each other.
+ *   The base child sits below all overlay children. If the
+ *   overlay widget itself gets an opaque background, it is
+ *   painted over the base layer, hiding all base content.
+ *
+ * GtkRevealer: fades/slides its child in and out. Even with
+ *   reveal-child=false it still occupies its allotted space
+ *   in the overlay. An opaque background here covers the
+ *   underlying task list even when the sidebar is hidden.
+ *
+ * Setting these to transparent lets their child surfaces
+ * carry their own backgrounds correctly.
+ * --------------------------------------------------------- */
+overlay,
+revealer,
+revealer > *:not(.sidebar):not(.background) {
+    background-color: transparent;
+}
+
+/* ---------------------------------------------------------
+ * SPINNERS, IMAGES & ANIMATED WIDGETS
+ * Must come immediately after the * rule to override it.
+ * The * wildcard paints a solid background over every node
+ * in the widget tree — including the internal nodes that
+ * spinners and icons use to draw themselves — making them
+ * invisible until a forced redraw exposes them briefly.
+ * --------------------------------------------------------- */
+spinner,
+spinner *,
+.spinner,
+image,
+image *,
+picture,
+picture * {
+    background-color: transparent;
+    color: @cx-active-alt;
+    opacity: 1;
+}
+
+/* ---------------------------------------------------------
+ * TEXTVIEW (task runner output pane)
+ * The internal 'text' CSS node of GtkTextView is a separate
+ * render node. The * rule paints it with a solid background
+ * which can obscure TextTag foreground colors. Explicit rules
+ * here ensure the text surface is properly styled.
+ * --------------------------------------------------------- */
+textview,
+textview > text,
+textview text {
+    background-color: @cx-bg;
+    color: @cx-active-alt;
+}
+
+/* ---------------------------------------------------------
  * CONTENT PANE / MAIN VIEW AREA
  * Catches the gray that Adwaita paints over window rules
  * --------------------------------------------------------- */
@@ -151,8 +212,8 @@ button:checked {
 }
 
 button.suggested-action {
-    background-color: @cx-positive;
-    color: #000;
+    background-color: @cx-accent;
+    color: #fff;
 }
 
 button.destructive-action {
