@@ -36,19 +36,52 @@ backup_file() {
 
 purge_old_panels_live() {
     log "purging existing panels from live session..."
-    
+
     if ! command -v qdbus6 >/dev/null 2>&1; then
         warn "qdbus6 not found, skipping live panel purge"
         return
     fi
-    
-    
+
     qdbus6 org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript "
         const allPanels = panels();
         for (let i = allPanels.length - 1; i >= 0; i--) {
             allPanels[i].remove();
         }
     " 2>/dev/null && ok "panels removed from live session" || warn "panel removal failed"
+}
+
+stop_plasmashell() {
+    log "stopping plasmashell…"
+    if pgrep -x plasmashell >/dev/null 2>&1; then
+        kquitapp6 plasmashell 2>/dev/null || killall plasmashell 2>/dev/null || true
+        # Wait for clean exit
+        local timeout=10
+        while pgrep -x plasmashell >/dev/null 2>&1 && [ "$timeout" -gt 0 ]; do
+            sleep 1
+            timeout=$((timeout - 1))
+        done
+        # Force kill if still alive
+        if pgrep -x plasmashell >/dev/null 2>&1; then
+            kill -9 "$(pgrep -x plasmashell)" 2>/dev/null || true
+            sleep 1
+        fi
+        ok "plasmashell stopped"
+    else
+        ok "plasmashell not running"
+    fi
+}
+
+start_plasmashell() {
+    log "starting plasmashell…"
+    nohup plasmashell --replace >/dev/null 2>&1 &
+    disown
+    # Give it a moment to initialize
+    sleep 3
+    if pgrep -x plasmashell >/dev/null 2>&1; then
+        ok "plasmashell started"
+    else
+        warn "plasmashell may not have started — check manually"
+    fi
 }
 
 fetch_repo() {
@@ -238,7 +271,7 @@ log "Building KDE Rounded Corners..."
 if mkdir build && cd build; then
     if cmake .. && cmake --build . -j"$(nproc)"; then
         log "Build successful"
-        
+
         log "Installing..."
         if make install; then
             log "Installation successful"
@@ -383,7 +416,7 @@ HOOK
             ;;
         debian)
             log "creating apt hook…"
-            
+
             sudo tee /usr/local/bin/check-and-rebuild-kwin-effects.sh > /dev/null <<'CHECKSCRIPT'
 #!/usr/bin/env bash
 # Only rebuild if kwin packages were updated in the current dpkg run
@@ -521,21 +554,21 @@ deploy_color_scheme() {
 deploy_wallpapers() {
     log "deploying wallpapers…"
     sudo mkdir -p /usr/local/share/icons
-    
+
     if [ -f "$REPO_DIR/cyberfield.jpg" ]; then
         sudo cp "$REPO_DIR/cyberfield.jpg" /usr/local/share/icons/
         ok "wallpaper → cyberfield.jpg → /usr/local/share/icons"
     else
         warn "missing → cyberfield.jpg"
     fi
-    
+
     if [ -f "$REPO_DIR/cyberxero2.png" ]; then
         sudo cp "$REPO_DIR/cyberxero2.png" /usr/local/share/icons/
         ok "icon → cyberxero2.png → /usr/local/share/icons"
     else
         warn "missing → cyberxero2.png"
     fi
-    
+
     mkdir -p "$HOME/Pictures"
     if [ -f "$REPO_DIR/cyberxero.png" ]; then
         cp "$REPO_DIR/cyberxero.png" "$HOME/Pictures/"
@@ -545,88 +578,12 @@ deploy_wallpapers() {
     fi
 }
 
-set_active_wallpaper() {
-    log "setting wallpaper → cyberfield.jpg…"
-    local wallpaper="/usr/local/share/icons/cyberfield.jpg"
-    
-    if [ ! -f "$wallpaper" ]; then
-        warn "wallpaper file not found: $wallpaper"
-        return 1
-    fi
-    
-    if command -v plasma-apply-wallpaperimage >/dev/null 2>&1; then
-        if plasma-apply-wallpaperimage "$wallpaper" 2>/dev/null; then
-            ok "wallpaper applied → $wallpaper"
-            return 0
-        else
-            warn "plasma-apply-wallpaperimage failed"
-            return 1
-        fi
-    else
-        warn "plasma-apply-wallpaperimage not found"
-        return 1
-    fi
-}
-
-create_wallpaper_autostart() {
-    log "creating post-login wallpaper script…"
-    local autostart_dir="$HOME/.config/autostart"
-    local script_dir="$HOME/.local/bin"
-    local wallpaper="/usr/local/share/icons/cyberfield.jpg"
-    
-    mkdir -p "$autostart_dir"
-    mkdir -p "$script_dir"
-
-    
-    cat > "$script_dir/cyberxero-set-wallpaper.sh" << 'WALLPAPER_SCRIPT'
-#!/bin/bash
-# CyberXero wallpaper setter - runs once on first login
-
-WALLPAPER="/usr/local/share/icons/cyberfield.jpg"
-MARKER="$HOME/.config/cyberxero-wallpaper-set"
-
-# Check if already run
-if [ -f "$MARKER" ]; then
-    exit 0
-fi
-
-# Wait for plasma to fully start
-sleep 3
-
-# Set wallpaper
-if command -v plasma-apply-wallpaperimage >/dev/null 2>&1; then
-    plasma-apply-wallpaperimage "$WALLPAPER"
-fi
-
-# Create marker file so this doesn't run again
-touch "$MARKER"
-
-# Remove this autostart entry and self-delete
-rm -f "$HOME/.config/autostart/cyberxero-wallpaper.desktop"
-rm -f "$HOME/.local/bin/cyberxero-set-wallpaper.sh"
-WALLPAPER_SCRIPT
-
-    chmod +x "$script_dir/cyberxero-set-wallpaper.sh"
-    
-    
-    cat > "$autostart_dir/cyberxero-wallpaper.desktop" << DESKTOP_ENTRY
-[Desktop Entry]
-Type=Application
-Name=CyberXero Wallpaper
-Exec=$script_dir/cyberxero-set-wallpaper.sh
-X-KDE-autostart-after=panel
-X-KDE-autostart-phase=2
-DESKTOP_ENTRY
-
-    ok "autostart wallpaper script created"
-}
-
 apply_breeze_decoration() {
     log "configuring Breeze window decoration…"
     if command -v kwriteconfig6 >/dev/null 2>&1; then
         local current_decoration
         current_decoration=$(kreadconfig6 --file kwinrc --group org.kde.kdecoration2 --key library 2>/dev/null || echo "")
-        
+
         if [ "$current_decoration" != "org.kde.breeze" ]; then
             kwriteconfig6 --file kwinrc --group org.kde.kdecoration2 --key library "org.kde.breeze"
             kwriteconfig6 --file kwinrc --group org.kde.kdecoration2 --key theme "Breeze"
@@ -641,37 +598,28 @@ apply_breeze_decoration() {
 
 apply_kde_theme_settings() {
     log "activating neon theme parameters…"
-    
-    
+
     if command -v plasma-apply-colorscheme >/dev/null 2>&1; then
         plasma-apply-colorscheme CyberXero 2>/dev/null || true
         ok "color scheme activated → CyberXero"
     else
         warn "plasma-apply-colorscheme not found"
     fi
-    
-    
+
     if command -v kwriteconfig6 >/dev/null 2>&1; then
         kwriteconfig6 --file kdeglobals --group Icons --key Theme "YAMIS"
         ok "icon theme activated → YAMIS"
-        
+
         kwriteconfig6 --file kwinrc --group Plugins --key krohnkiteEnabled true
         ok "krohnkite enabled"
-        
+
         kwriteconfig6 --file kwinrc --group Plugins --key kyaniteEnabled true
         ok "kyanite enabled"
     else
         warn "kwriteconfig6 not found"
     fi
-    
-    
+
     apply_breeze_decoration
-    
-    
-    if command -v qdbus6 >/dev/null 2>&1; then
-        qdbus6 org.kde.KWin /KWin reconfigure 2>/dev/null || true
-        ok "KWin reconfigured"
-    fi
 }
 
 main() {
@@ -691,33 +639,39 @@ main() {
     build_kde_rounded_corners
     build_better_blur
     setup_autorebuild_system
-    
+
     subsection "KWin Scripts"
     install_krohnkite
     install_kyanite
 
     section "PHASE 3: THEME DEPLOYMENT"
-    
-    subsection "Panel Cleanup"
 
+    subsection "Panel Cleanup & Shell Shutdown"
     purge_old_panels_live
-    
+    stop_plasmashell
+
     subsection "Visual Assets"
     deploy_yamis_icons
     deploy_modernclock
     deploy_color_scheme
     deploy_wallpapers
-    
+
     subsection "Configuration Files"
     deploy_config_folders
     deploy_rc_files
     deploy_kwinrules
-    
+
     subsection "Theme Activation"
     apply_kde_theme_settings
-    
-    subsection "Wallpaper Setup"
-    create_wallpaper_autostart
+
+    subsection "Restarting Plasma Shell"
+    start_plasmashell
+
+    # Reconfigure KWin after shell is back
+    if command -v qdbus6 >/dev/null 2>&1; then
+        qdbus6 org.kde.KWin /KWin reconfigure 2>/dev/null || true
+        ok "KWin reconfigured"
+    fi
 
     printf "\n\033[1;35m╔═══════════════════════════════════════════════════════╗\033[0m\n"
     printf "\033[1;35m║\033[0m  \033[1;32mCYBERXERO DEPLOYMENT COMPLETE\033[0m                    \033[1;35m║\033[0m\n"
@@ -725,10 +679,11 @@ main() {
     printf "\033[1;36m📦 Backup archive:\033[0m %s\n" "$BACKUP_DIR"
     printf "\033[1;36m📋 Auto-rebuild logs:\033[0m /var/log/kde-rounded-corners-rebuild.log\n"
     printf "\033[1;36m📋 Auto-rebuild logs:\033[0m /var/log/better-blur-dx-rebuild.log\n\n"
-    printf "\033[1;31m╔═══════════════════════════════════════════════════════╗\033[0m\n"
-    printf "\033[1;31m║  ⚠️  ACTION REQUIRED: LOG OUT OR REBOOT NOW           ║\033[0m\n"
-    printf "\033[1;31m║     to fully apply all theme changes!                 ║\033[0m\n"
-    printf "\033[1;31m╚═══════════════════════════════════════════════════════╝\033[0m\n\n"
+    printf "\033[1;33m╔═══════════════════════════════════════════════════════╗\033[0m\n"
+    printf "\033[1;33m║  ℹ️  Plasma shell has been restarted with new config.  ║\033[0m\n"
+    printf "\033[1;33m║     If anything looks off, a full re-login will fix   ║\033[0m\n"
+    printf "\033[1;33m║     any remaining state issues.                       ║\033[0m\n"
+    printf "\033[1;33m╚═══════════════════════════════════════════════════════╝\033[0m\n\n"
 }
 
 main "$@"
