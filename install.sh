@@ -7,6 +7,9 @@ set -euo pipefail
 REPO_DIR="$HOME/CyberXero"
 BACKUP_DIR="$HOME/CyberXero-backup-$(date +%Y%m%d_%H%M%S)"
 DISTRO="unknown"
+WALLPAPER_PATH="/usr/local/share/icons/cyberfield.jpg"
+# Activity ID baked into the repo appletsrc — will be replaced with target system's ID
+REPO_ACTIVITY_ID="c9d52ed7-43dd-4b93-95f6-74b5ee97b192"
 
 log()  { printf "\033[1;36m[Ξ]\033[0m %s\n" "$1"; }
 ok()   { printf "\033[1;32m[✔]\033[0m %s\n" "$1"; }
@@ -512,6 +515,58 @@ deploy_kwinrules() {
     fi
 }
 
+patch_appletsrc_activity_id() {
+    log "patching desktop activity ID in appletsrc…"
+    local appletsrc="$HOME/.config/plasma-org.kde.plasma.desktop-appletsrc"
+
+    if [ ! -f "$appletsrc" ]; then
+        warn "appletsrc not found, skipping activity ID patch"
+        return
+    fi
+
+    # Get the real activity ID from the running activity manager
+    local real_activity_id=""
+
+    if command -v qdbus6 >/dev/null 2>&1; then
+        real_activity_id=$(qdbus6 org.kde.ActivityManager /ActivityManager/Activities ListActivities 2>/dev/null | head -1) || true
+    fi
+
+    # Fallback: read from the backup of the original appletsrc
+    if [ -z "$real_activity_id" ] && [ -f "$BACKUP_DIR/plasma-org.kde.plasma.desktop-appletsrc" ]; then
+        real_activity_id=$(grep -oP 'activityId=\K[0-9a-f-]{36}' "$BACKUP_DIR/plasma-org.kde.plasma.desktop-appletsrc" 2>/dev/null | head -1) || true
+    fi
+
+    if [ -z "$real_activity_id" ]; then
+        warn "could not determine system activity ID — wallpaper containment may not bind"
+        return
+    fi
+
+    if [ "$real_activity_id" = "$REPO_ACTIVITY_ID" ]; then
+        ok "activity ID already matches ($real_activity_id)"
+        return
+    fi
+
+    # Replace the hardcoded repo activity ID with the real one
+    sed -i "s|$REPO_ACTIVITY_ID|$real_activity_id|g" "$appletsrc"
+    ok "activity ID patched → $real_activity_id"
+}
+
+apply_wallpaper_fallback() {
+    log "applying wallpaper via plasma-apply-wallpaperimage…"
+    if [ ! -f "$WALLPAPER_PATH" ]; then
+        warn "wallpaper not found at $WALLPAPER_PATH"
+        return
+    fi
+    if command -v plasma-apply-wallpaperimage >/dev/null 2>&1; then
+        sleep 2
+        plasma-apply-wallpaperimage "$WALLPAPER_PATH" 2>/dev/null && \
+            ok "wallpaper applied → $WALLPAPER_PATH" || \
+            warn "plasma-apply-wallpaperimage failed (activity ID patch should handle it)"
+    else
+        warn "plasma-apply-wallpaperimage not found"
+    fi
+}
+
 deploy_yamis_icons() {
     log "installing YAMIS icon theme…"
     mkdir -p "$HOME/.local/share/icons"
@@ -660,6 +715,7 @@ main() {
     deploy_config_folders
     deploy_rc_files
     deploy_kwinrules
+    patch_appletsrc_activity_id
 
     subsection "Theme Activation"
     apply_kde_theme_settings
@@ -672,6 +728,9 @@ main() {
         qdbus6 org.kde.KWin /KWin reconfigure 2>/dev/null || true
         ok "KWin reconfigured"
     fi
+
+    # Belt-and-suspenders: also set wallpaper via CLI tool
+    apply_wallpaper_fallback
 
     printf "\n\033[1;35m╔═══════════════════════════════════════════════════════╗\033[0m\n"
     printf "\033[1;35m║\033[0m  \033[1;32mCYBERXERO DEPLOYMENT COMPLETE\033[0m                    \033[1;35m║\033[0m\n"
