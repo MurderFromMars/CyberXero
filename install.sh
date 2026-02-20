@@ -123,7 +123,7 @@ install_arch_dependencies() {
     log "installing arch dependencies…"
     sudo pacman -S --needed --noconfirm \
         git cmake extra-cmake-modules base-devel unzip cava \
-        kitty fastfetch >/dev/null 2>&1
+        kitty fastfetch imagemagick >/dev/null 2>&1
 
     if command -v yay >/dev/null 2>&1; then
         yay -S --needed --noconfirm qt5-tools >/dev/null 2>&1
@@ -142,7 +142,7 @@ install_debian_dependencies() {
         git cmake g++ extra-cmake-modules kwin-dev unzip \
         qt6-base-private-dev qt6-base-dev-tools \
         libkf6kcmutils-dev libdrm-dev libplasma-dev cava \
-        kitty fastfetch >/dev/null 2>&1
+        kitty fastfetch imagemagick >/dev/null 2>&1
     ok "debian dependencies installed"
 }
 
