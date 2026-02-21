@@ -33,7 +33,7 @@ This command downloads the installer and deploys the full CyberXero environment 
 - Plasma panel colorizer
 - Kurve Cava powered audio visualizer for KDE Panels
 - KDE Rounded Corners custom window rounding and shadow/border effects
-
+- Better Blur DX  for blur effects on transparent windows 
 **Configuration Management:**
 - Automatic backup of your configuration files
 - Deployment of preconfigured Plasma and KWin configuration files including btop, kitty, fastfetch, and cava configurations
