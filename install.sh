@@ -678,6 +678,11 @@ apply_kde_theme_settings() {
     fi
 
     if command -v kwriteconfig6 >/dev/null 2>&1; then
+        # Set custom accent color (#fa1bf8)
+        kwriteconfig6 --file kdeglobals --group General --key AccentColor "250,27,248"
+        kwriteconfig6 --file kdeglobals --group General --key ColorSchemeHash ""
+        ok "accent color → #fa1bf8"
+
         kwriteconfig6 --file kdeglobals --group Icons --key Theme "YAMIS"
         ok "icon theme activated → YAMIS"
 
