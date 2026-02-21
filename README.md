@@ -1,24 +1,25 @@
-# CyberXero — Official XeroLinux Cyberpunk Plasma Theme
+# CyberXero — Cyberpunk Plasma Theme
 
-**CyberXero** is a cyberpunk-inspired theme for **KDE Plasma 6**, branded as an official theme of **XeroLinux**, (The KDE Tiling Special) but it is **not exclusive** to XeroLinux.  
-It transforms Plasma into a futuristic, dynamic tiling window manager (TWM) setup with neon visuals and productivity-focused workflow enhancements.
+**CyberXero** is a cyberpunk-inspired theme for **KDE Plasma 6** that transforms Plasma into a futuristic, dynamic tiling window manager (TWM) setup with neon visuals and productivity-focused workflow enhancements.
 
 CyberXero integrates advanced visual effects, KWin scripts, and curated configurations to deliver a fully immersive cyberpunk desktop experience.
-***I will be including logos for vanilla Arch and PikaOS which can be manually swapped with the XeroLinux logos***
+***Logos for Arch, PikaOS, and other distributions are included and can be manually swapped as desired.***
 
--------------------------------------------------------------------------------
+---
 
-##  Quick Install
+## Quick Install
 
 The easiest way to install CyberXero on your system:
 
-    curl -fsSL https://raw.githubusercontent.com/MurderFromMars/CyberXero/main/install.sh | bash
+```bash
+curl -fsSL https://raw.githubusercontent.com/MurderFromMars/CyberXero/main/install.sh | bash
+```
 
-This command downloads the installer and deploys the full CyberXero environment automatically.  
+This command downloads the installer and deploys the full CyberXero environment automatically.
 
--------------------------------------------------------------------------------
+---
 
-##  Features
+## Features
 
 **Visual Enhancements:**
 - Neon cyberpunk color scheme (`CyberXero.colors`)
@@ -27,15 +28,15 @@ This command downloads the installer and deploys the full CyberXero environment 
 - Custom wallpapers and icons
 
 **Window Management:**
-- **Krohnkite:** dynamic tiling KWin script  
-- **Kyanite:** **true GNOME-style dynamic workspace management** for Plasma 6, authored by me  
+- **Krohnkite:** dynamic tiling KWin script
+- **Kyanite:** true GNOME-style dynamic workspace management for Plasma 6, authored by me
 - Plasma panel colorizer
 - Kurve Cava powered audio visualizer for KDE Panels
 - KDE Rounded Corners custom window rounding and shadow/border effects
 
 **Configuration Management:**
 - Automatic backup of your configuration files
-- Deployment of preconfigured Plasma and KWin configuration files including btop, kitty, fastfetch, and cava configurarions
+- Deployment of preconfigured Plasma and KWin configuration files including btop, kitty, fastfetch, and cava configurations
 - Auto rebuild system for KDE Rounded Corners after KWin updates
 
 **Advanced Automation:**
@@ -44,13 +45,13 @@ This command downloads the installer and deploys the full CyberXero environment 
 - Sets wallpapers programmatically (via `plasma-apply-wallpaperimage` or JavaScript fallback)
 - Reconfigures KWin automatically after changes
 
--------------------------------------------------------------------------------
+---
 
-##  Supported Platforms
+## Supported Platforms
 
-- **Arch / Arch-based**   
-- **Debian / Ubuntu-based**   
-- **Other distributions**  Not officially supported  
+- **Arch / Arch-based**
+- **Debian / Ubuntu-based**
+- **Other distributions** — Not officially supported
 
 **Requirements:**
 - KDE Plasma 6.x
@@ -59,28 +60,29 @@ This command downloads the installer and deploys the full CyberXero environment 
 - Internet connectivity
 - Sudo privileges
 - Wayland only
--------------------------------------------------------------------------------
 
-##  Technology Highlights
+---
+
+## Technology Highlights
 
 - **Bash Automation:** orchestrates builds, configuration, and deployment
-- **KDE JavaScript Integration:**  
+- **KDE JavaScript Integration:**
   CyberXero uses inline JavaScript via `qdbus6` to:
   - Remove live Plasma panels
   - Set wallpapers programmatically
-  - Interact with KDE Plasma APIs directly  
+  - Interact with KDE Plasma APIs directly
 
-- **Source Builds:**  
+- **Source Builds:**
   Components like `KDE Rounded Corners`, `Kurve`, and `Plasma Panel Colorizer` are built from source for performance and stability.
 
-- **Auto Rebuild Hooks for KDE Rounded Corners:**  
+- **Auto Rebuild Hooks for KDE Rounded Corners:**
   CyberXero ensures compatibility after KWin updates:
   - **Arch:** pacman hook executes `/usr/local/bin/rebuild-kde-rounded-corners.sh` post-kwin upgrade
   - **Debian/Ubuntu:** APT post-invoke hook triggers rebuild if kwin packages were updated
 
--------------------------------------------------------------------------------
+---
 
-## 🛠 Installation Details
+## Installation Details
 
 CyberXero performs the following phases automatically:
 
@@ -99,52 +101,54 @@ CyberXero performs the following phases automatically:
 - Apply preconfigured Plasma and KWin configuration files
 - Set active wallpaper
 - Activate KWin scripts:
-  - **Krohnkite:** dynamic tiling  
-  - **Kyanite:** **true GNOME-style dynamic workspace management**, fully dynamic and adaptable to your workflow  
+  - **Krohnkite:** dynamic tiling
+  - **Kyanite:** true GNOME-style dynamic workspace management, fully dynamic and adaptable to your workflow
 - Enforce Breeze window decoration
 - Reconfigure KWin and restart PlasmaShell
 
--------------------------------------------------------------------------------
+---
 
-##  Backup Strategy
+## Backup Strategy
 
 All modified files are backed up to:
 
-    ~/CyberXero-backup-YYYYMMDD_HHMMSS
+```
+~/CyberXero-backup-YYYYMMDD_HHMMSS
+```
 
 This allows you to restore previous configurations manually if needed.
 
--------------------------------------------------------------------------------
+---
 
-##  Post-Installation
+## Post-Installation
 
 - **Logout or reboot** is required to fully apply all theme and script changes.
 - The installer will indicate when this step is necessary.
 
--------------------------------------------------------------------------------
+---
 
-##  Maintenance
+## Maintenance
 
 - Automatic rebuild hooks ensure KDE Rounded Corners remains compatible after KWin updates:
   - Arch: pacman hook
   - Debian/Ubuntu: APT post-invoke hook
 - Rebuild logs are saved at:
 
-    /var/log/kde-rounded-corners-rebuild.log
+```
+/var/log/kde-rounded-corners-rebuild.log
+```
 
--------------------------------------------------------------------------------
+---
 
-##  Audience
+## Audience
 
 **Intended for:**
-- XeroLinux users (default branding included)
 - KDE Plasma 6 enthusiasts
 - Users seeking a cyberpunk dynamic tiling workflow
-- Anyone on supported Linux distributions who wants a futuristic dynamic TWM desktop with the creature comforts of Plasma.
+- Anyone on supported Linux distributions who wants a futuristic dynamic TWM desktop with the creature comforts of Plasma
 
--------------------------------------------------------------------------------
+---
 
+## License
 
-##  License
-
-CyberXero script is distributed under the MIT license. all projects built by, or included in the script retain their original licensing 
+CyberXero is distributed under the MIT license. All projects built by, or included in, the script retain their original licensing.
