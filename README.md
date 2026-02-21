@@ -37,7 +37,7 @@ This command downloads the installer and deploys the full CyberXero environment 
 **Configuration Management:**
 - Automatic backup of your configuration files
 - Deployment of preconfigured Plasma and KWin configuration files including btop, kitty, fastfetch, and cava configurations
-- Auto rebuild system for KDE Rounded Corners after KWin updates
+- Auto rebuild system for KDE Rounded Corners and Better Blur DX after KWin updates
 
 **Advanced Automation:**
 - Removes existing Plasma panels safely during deployment
