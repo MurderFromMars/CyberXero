@@ -1,5 +1,4 @@
-## Clean, working CAVA configuration
-## Regenerated for proper gradient support
+
 
 [general]
 framerate = 60
@@ -30,15 +29,15 @@ synchronized_sync = 1
 waveform = 0
 
 [color]
-# Enable vertical gradient
+
 gradient = 1
 
-# Your custom cyber‑aesthetic gradient
+
 gradient_color_1 = "#35daff"   ; cyan‑aqua
 gradient_color_2 = "#fa1bf8"   ; magenta‑pink
 gradient_color_3 = "#7640ff"   ; violet‑purple
 
-# Optional: uncomment to force a background
+
 # background = '#000000'
 
 [smoothing]
