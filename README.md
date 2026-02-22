@@ -3,7 +3,7 @@
 **CyberXero** is a cyberpunk-inspired theme for **KDE Plasma 6** that transforms Plasma into a futuristic, dynamic tiling window manager (TWM) setup with neon visuals and productivity-focused workflow enhancements.
 
 CyberXero integrates advanced visual effects, KWin scripts, and curated configurations to deliver a fully immersive cyberpunk desktop experience.
-***Logos for Arch, PikaOS, and other distributions are included and can be manually swapped as desired.***
+***Logos for Debian/PikaOD will be added soon***
 
 ---
 
