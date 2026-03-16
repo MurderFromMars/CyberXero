@@ -5,12 +5,15 @@
 CyberXero integrates advanced visual effects, KWin scripts, and curated configurations to deliver a fully immersive cyberpunk desktop experience.
 ***Logos for Debian/PikaOS will be added soon***
 
+![CyberXero Desktop Overview](screenshot1.png)
+![CyberXero Desktop Overview](screenshot2.png)
+![CyberXero Desktop Overview](screenshot3.png)
+
 ---
 
 ## Quick Install
 
 The easiest way to install CyberXero on your system:
-
 ```bash
 curl -fsSL https://raw.githubusercontent.com/MurderFromMars/CyberXero/main/install.sh | bash
 ```
@@ -33,7 +36,8 @@ This command downloads the installer and deploys the full CyberXero environment 
 - Plasma panel colorizer
 - Kurve Cava powered audio visualizer for KDE Panels
 - KDE Rounded Corners custom window rounding and shadow/border effects
-- Better Blur DX  for blur effects on transparent windows 
+- Better Blur DX for blur effects on transparent windows
+
 **Configuration Management:**
 - Automatic backup of your configuration files
 - Deployment of preconfigured Plasma and KWin configuration files including btop, kitty, fastfetch, and cava configurations
@@ -111,7 +115,6 @@ CyberXero performs the following phases automatically:
 ## Backup Strategy
 
 All modified files are backed up to:
-
 ```
 ~/CyberXero-backup-YYYYMMDD_HHMMSS
 ```
@@ -133,7 +136,6 @@ This allows you to restore previous configurations manually if needed.
   - Arch: pacman hook
   - Debian/Ubuntu: APT post-invoke hook
 - Rebuild logs are saved at:
-
 ```
 /var/log/kde-rounded-corners-rebuild.log
 ```
