@@ -1,3 +1,4 @@
+
 #!/usr/bin/env bash
 [ -z "$BASH_VERSION" ] && exec bash "$0" "$@"
 set -euo pipefail
@@ -110,6 +111,9 @@ detect_distro() {
     if command -v pacman >/dev/null 2>&1; then
         DISTRO="arch"
         ok "arch‑based system detected"
+    elif command -v dnf >/dev/null 2>&1; then
+        DISTRO="fedora"
+        ok "fedora‑based system detected"
     elif command -v apt >/dev/null 2>&1; then
         DISTRO="debian"
         ok "debian‑based system detected"
@@ -139,16 +143,40 @@ install_debian_dependencies() {
     log "installing debian dependencies…"
     sudo apt update >/dev/null 2>&1
     sudo apt install -y \
-        git cmake g++ extra-cmake-modules kwin-dev unzip \
+        git cmake g++ extra-cmake-modules qt6-tools-dev kwin-dev unzip \
+        libkf6configwidgets-dev gettext libkf6crash-dev \
+        libkf6globalaccel-dev libkf6kio-dev libkf6service-dev \
+        libkf6notifications-dev libkf6kcmutils-dev libkdecorations3-dev \
+        libxcb-composite0-dev libxcb-randr0-dev libxcb-shm0-dev \
         qt6-base-private-dev qt6-base-dev-tools \
-        libkf6kcmutils-dev libdrm-dev libplasma-dev cava \
+        libdrm-dev libplasma-dev cava \
         kitty fastfetch imagemagick >/dev/null 2>&1
     ok "debian dependencies installed"
+}
+
+install_fedora_dependencies() {
+    log "installing fedora dependencies…"
+    sudo dnf -y install \
+        git cmake extra-cmake-modules gcc-c++ unzip \
+        kf6-kwindowsystem-devel plasma-workspace-devel \
+        libplasma-devel qt6-qtbase-private-devel qt6-qtbase-devel \
+        kwin-devel kf6-knotifications-devel kf6-kio-devel \
+        kf6-kcrash-devel kf6-ki18n-devel kf6-kguiaddons-devel \
+        libepoxy-devel kf6-kglobalaccel-devel kf6-kcmutils-devel \
+        kf6-kconfigwidgets-devel kf6-kdeclarative-devel \
+        kdecoration-devel kf6-kglobalaccel kf6-kdeclarative \
+        libplasma kf6-kio qt6-qtbase kf6-kguiaddons kf6-ki18n \
+        wayland-devel libdrm-devel \
+        spectacle python3 python3-dbus python3-gobject \
+        qt6-qtwebsockets python3-websockets \
+        cava kitty fastfetch ImageMagick >/dev/null 2>&1
+    ok "fedora dependencies installed"
 }
 
 install_dependencies() {
     case "$DISTRO" in
         arch)   install_arch_dependencies ;;
+        fedora) install_fedora_dependencies ;;
         debian) install_debian_dependencies ;;
         *)      err "invalid distro state"; exit 1 ;;
     esac
@@ -433,6 +461,16 @@ CHECKSCRIPT
 DPkg::Post-Invoke { "/usr/local/bin/check-and-rebuild-kwin-effects.sh"; };
 APTHOOK
             ok "apt hook installed → auto-rebuild on kwin updates"
+            ;;
+        fedora)
+            log "creating dnf post-transaction hook…"
+
+            sudo mkdir -p /etc/dnf/plugins/post-transaction-actions.d
+            sudo tee /etc/dnf/plugins/post-transaction-actions.d/kwin-effects-rebuild.action > /dev/null <<'DNFHOOK'
+kwin-wayland:any:install:/usr/local/bin/rebuild-kwin-effects.sh
+kwin-wayland:any:update:/usr/local/bin/rebuild-kwin-effects.sh
+DNFHOOK
+            ok "dnf hook installed → auto-rebuild on kwin updates"
             ;;
     esac
 
