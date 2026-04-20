@@ -75,8 +75,8 @@ wmclasscomplete=true
 wmclassmatch=1
 
 [General]
-count=14
-rules=dd8abd7d-0409-4731-9ff9-b90b0d60565d,d480daa5-ca9f-468a-a1f5-eb12b1773f13,8b8fe6db-7657-4949-8f67-46433ad678e2,ca879877-05d2-418c-ad06-812a726e79c5,93078e4e-539a-4025-9bce-25981edcc3c3,aabb1361-2267-4078-b973-91989311aac1,233d4877-0c86-4e79-bfa6-20d899ae3c6e,71da1d31-f62e-4e89-93b4-2a652ba8f1f0,066657be-3095-41ae-a614-8ee33ef967b4,ea2e093e-c484-4414-819e-f176c6f31464,8467b58c-a1e1-4559-9696-32e77b3f6174,b5ca3e21-55e5-4000-97f9-41a49398449e,076a9d30-5700-4253-a405-10c35fe0e4c4,86c77aae-440d-428c-b6fd-56351cb283ca
+count=15
+rules=cc1ec399-3d71-421e-9537-131e6b405abc,dd8abd7d-0409-4731-9ff9-b90b0d60565d,d480daa5-ca9f-468a-a1f5-eb12b1773f13,8b8fe6db-7657-4949-8f67-46433ad678e2,ca879877-05d2-418c-ad06-812a726e79c5,93078e4e-539a-4025-9bce-25981edcc3c3,aabb1361-2267-4078-b973-91989311aac1,233d4877-0c86-4e79-bfa6-20d899ae3c6e,71da1d31-f62e-4e89-93b4-2a652ba8f1f0,066657be-3095-41ae-a614-8ee33ef967b4,ea2e093e-c484-4414-819e-f176c6f31464,8467b58c-a1e1-4559-9696-32e77b3f6174,b5ca3e21-55e5-4000-97f9-41a49398449e,076a9d30-5700-4253-a405-10c35fe0e4c4,86c77aae-440d-428c-b6fd-56351cb283ca
 
 [aabb1361-2267-4078-b973-91989311aac1]
 Description=Application settings for kcm_kwinrules
@@ -102,6 +102,14 @@ Description=Application settings for org.kde.gwenview
 adaptivesync=false
 adaptivesyncrule=2
 wmclass=gwenview org.kde.gwenview
+wmclasscomplete=true
+wmclassmatch=1
+
+[cc1ec399-3d71-421e-9537-131e6b405abc]
+Description=Application settings for google-chrome
+adaptivesync=false
+adaptivesyncrule=2
+wmclass=\sgoogle-chrome
 wmclasscomplete=true
 wmclassmatch=1
 
