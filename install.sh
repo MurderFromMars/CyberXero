@@ -573,6 +573,18 @@ deploy_rc_files() {
     done
 }
 
+deploy_kdeglobals() {
+    log "deploying kdeglobals…"
+    local file="kdeglobals"
+    if [ -f "$REPO_DIR/$file" ]; then
+        backup_file "$HOME/.config/$file"
+        cp "$REPO_DIR/$file" "$HOME/.config/$file"
+        ok "rc → $file"
+    else
+        warn "missing → $file"
+    fi
+}
+
 deploy_kwinrules() {
     log "deploying kwinrulesrc…"
     local file="kwinrulesrc"
@@ -791,6 +803,7 @@ main() {
     deploy_config_folders
     deploy_gtk4_config
     deploy_rc_files
+    deploy_kdeglobals
     deploy_kwinrules
     patch_appletsrc_activity_id
 
