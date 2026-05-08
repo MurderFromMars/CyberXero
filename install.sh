@@ -507,6 +507,22 @@ install_kyanite() {
     fi
 }
 
+deploy_tv_effect() {
+    log "deploying TV [Burn-My-Windows] kwin effect…"
+    local src="$REPO_DIR/kwin6_effect_tv"
+    local dest="$HOME/.local/share/kwin/effects/kwin6_effect_tv"
+
+    if [ ! -d "$src" ]; then
+        warn "missing → kwin6_effect_tv (not found in repo)"
+        return
+    fi
+
+    mkdir -p "$HOME/.local/share/kwin/effects"
+    rm -rf "$dest"
+    cp -r "$src" "$dest"
+    ok "kwin effect → kwin6_effect_tv"
+}
+
 deploy_config_folders() {
     log "deploying configuration modules…"
     local folders=(btop kitty fastfetch cava)
@@ -757,6 +773,7 @@ main() {
     subsection "KWin Scripts"
     install_krohnkite
     install_kyanite
+    deploy_tv_effect
 
     section "PHASE 3: THEME DEPLOYMENT"
 
