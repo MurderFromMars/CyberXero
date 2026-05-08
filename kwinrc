@@ -51,6 +51,9 @@ LayoutMode=0
 [Effect-presentwindows]
 BorderActivateAll=9
 
+[Effect-slide]
+SlideBackground=false
+
 [Effect-wobblywindows]
 Drag=85
 Stiffness=10
@@ -76,10 +79,11 @@ forceblurEnabled=true
 karouselEnabled=false
 krohnkiteEnabled=true
 kwin4_effect_dimscreenEnabled=true
-kwin4_effect_fadedesktopEnabled=true
+kwin4_effect_fadedesktopEnabled=false
 kwin4_effect_maximizeEnabled=false
 kwin4_effect_maximize_xrenderEnabled=true
 kwin4_effect_rubberband_maximizeEnabled=false
+kwin4_effect_slideEnabled=true
 kwin6_effect_tvEnabled=true
 kyaniteEnabled=true
 kzonesEnabled=false
