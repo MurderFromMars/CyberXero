@@ -1,4 +1,3 @@
-
 #!/usr/bin/env bash
 [ -z "$BASH_VERSION" ] && exec bash "$0" "$@"
 set -euo pipefail
@@ -242,13 +241,23 @@ build_kde_rounded_corners() {
     log "compiling kde‑rounded‑corners…"
     local tmp
     tmp="$(mktemp -d)"
-    git clone "https://github.com/matinlotfali/KDE-Rounded-Corners" "$tmp/kde-rounded-corners" 2>&1 | grep -v -E "^(remote:|Receiving|Resolving|Counting)" | grep -v "^$" || true
-    cd "$tmp/kde-rounded-corners"
-    mkdir build && cd build
-    cmake .. >/dev/null 2>&1
-    cmake --build . -j"$(nproc)" 2>&1 | grep -E "Built target|^\[" || true
-    sudo make install >/dev/null 2>&1
-    cd ~
+
+    if ! (
+        set -euo pipefail
+        git clone "https://github.com/matinlotfali/KDE-Rounded-Corners" "$tmp/kde-rounded-corners" 2>&1 \
+            | grep -v -E "^(remote:|Receiving|Resolving|Counting)" | grep -v "^$"
+        cd "$tmp/kde-rounded-corners"
+        mkdir build && cd build
+        cmake .. >/dev/null 2>&1
+        cmake --build . -j"$(nproc)" 2>&1 | grep -E "Built target|^\[" || true
+        sudo make install >/dev/null 2>&1
+    ); then
+        warn "kde-rounded-corners build failed — skipping (theme will still install)"
+        warn "run manually later: https://github.com/matinlotfali/KDE-Rounded-Corners"
+        rm -rf "$tmp"
+        return
+    fi
+
     rm -rf "$tmp"
     ok "rounded corners installed"
 }
@@ -257,13 +266,35 @@ build_better_blur() {
     log "compiling kwin‑effects‑better‑blur‑dx…"
     local tmp
     tmp="$(mktemp -d)"
-    git clone "https://github.com/xarblu/kwin-effects-better-blur-dx" "$tmp/kwin-effects-better-blur-dx" 2>&1 | grep -v -E "^(remote:|Receiving|Resolving|Counting)" | grep -v "^$" || true
-    cd "$tmp/kwin-effects-better-blur-dx"
-    mkdir build && cd build
-    cmake .. -DCMAKE_INSTALL_PREFIX=/usr >/dev/null 2>&1
-    make -j"$(nproc)" 2>&1 | grep -E "Built target|^\[" || true
-    sudo make install >/dev/null 2>&1
-    cd ~
+
+    if ! (
+        set -euo pipefail
+        git clone "https://github.com/xarblu/kwin-effects-better-blur-dx" "$tmp/kwin-effects-better-blur-dx" 2>&1 \
+            | grep -v -E "^(remote:|Receiving|Resolving|Counting)" | grep -v "^$"
+        cd "$tmp/kwin-effects-better-blur-dx"
+
+        # Patch: KWin replaced QRect with KWin::Rect in its API. If blur.cpp still
+        # uses QRect for backgroundRect/scaledBackgroundRect, the build fails with:
+        #   "cannot convert 'const QRect*' to 'const KWin::Rect*'"
+        # Confirmed broken on KWin 6.6.5 / KF6 6.26.0 / Qt 6.11.1.
+        # Safe no-op on versions where the types already match.
+        if grep -q "QRect backgroundRect" src/blur.cpp 2>/dev/null; then
+            log "applying QRect → KWin::Rect patch for blur.cpp…"
+            sed -i 's/QRect backgroundRect/KWin::Rect backgroundRect/g' src/blur.cpp
+            sed -i 's/QRect scaledBackgroundRect/KWin::Rect scaledBackgroundRect/g' src/blur.cpp
+        fi
+
+        mkdir build && cd build
+        cmake .. -DCMAKE_INSTALL_PREFIX=/usr >/dev/null 2>&1
+        make -j"$(nproc)" 2>&1 | grep -E "Built target|^\[" || true
+        sudo make install >/dev/null 2>&1
+    ); then
+        warn "better blur dx build failed — skipping (theme will still install)"
+        warn "run manually later: https://github.com/xarblu/kwin-effects-better-blur-dx"
+        rm -rf "$tmp"
+        return
+    fi
+
     rm -rf "$tmp"
     ok "better blur dx installed"
 }
@@ -343,6 +374,7 @@ REBUILD_SCRIPT
     sudo chmod +x /usr/local/bin/rebuild-kde-rounded-corners.sh
 
     # --- Better Blur DX rebuild script ---
+    # Includes the QRect → KWin::Rect patch in case upstream hasn't fixed it yet.
     sudo tee /usr/local/bin/rebuild-better-blur-dx.sh > /dev/null <<'REBUILD_BLUR'
 #!/usr/bin/env bash
 set -euo pipefail
@@ -367,6 +399,14 @@ else
 fi
 
 cd better-blur-dx
+
+# Patch: KWin replaced QRect with KWin::Rect in its API. Safe no-op if already fixed upstream.
+if grep -q "QRect backgroundRect" src/blur.cpp 2>/dev/null; then
+    log "Applying QRect → KWin::Rect patch for blur.cpp..."
+    sed -i 's/QRect backgroundRect/KWin::Rect backgroundRect/g' src/blur.cpp
+    sed -i 's/QRect scaledBackgroundRect/KWin::Rect scaledBackgroundRect/g' src/blur.cpp
+    log "Patch applied"
+fi
 
 log "Building Better Blur DX..."
 if mkdir build && cd build; then
