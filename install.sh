@@ -126,7 +126,7 @@ install_arch_dependencies() {
     log "installing arch dependencies…"
     sudo pacman -S --needed --noconfirm \
         git cmake extra-cmake-modules base-devel unzip cava \
-        kitty fastfetch imagemagick >/dev/null 2>&1
+        kitty vulkan-headers fastfetch imagemagick >/dev/null 2>&1
 
     if command -v yay >/dev/null 2>&1; then
         yay -S --needed --noconfirm qt5-tools >/dev/null 2>&1
