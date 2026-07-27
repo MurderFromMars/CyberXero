@@ -28,6 +28,7 @@ BlurMatching=false
 BlurMenus=true
 BlurNonMatching=true
 BlurStrength=7
+CornerRadius=12
 WindowClasses=
 
 [Effect-blur]
